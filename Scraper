@@ -1,0 +1,44 @@
+import requests
+from bs4 import BeautifulSoup
+import pandas as pd
+standing_url = "https://uk.trustpilot.com/review/<COMPANY NAME HERE>"
+reviews_list = []
+page_num = 1
+
+while page_num <= 4:
+    # Build the URL for the current page
+    page_url = f"{standing_url}?page={page_num}"
+      # Make a request to the current page
+    response = requests.get(page_url)
+    
+    # Parse the HTML content of the page
+    soup = BeautifulSoup(response.content, 'html.parser')
+    soup = BeautifulSoup(response.text)
+    # table = soup.select("p", {"class": "reviewBody[a-zA-Z]*"})
+    table = soup.select("p", {"class": "typography_body-l__KUYFJ typography_appearance-default__AAY17 typography_color-black__5LYEn"})
+    reviews_text = soup.get_text().strip()
+    reviews = reviews_text.split('\n\n\n')
+    for review in reviews:
+        split_reviews = review.split('Date of experience')
+        # Process each review as needed
+        for items in split_reviews:
+            reviews_list.append(items)
+    next_button = soup.find('a', {'class': 'link_internal__7XN06 button_button__T34Lr button_l__mm_bi button_appearance-outline__vYcdF button_squared__21GoE link_button___108l pagination-link_next__SDNU4 pagination-link_rel__VElFy'})
+    if next_button is None:
+        # No more pages, so break out of the loop
+        break
+    else:
+        # Move to the next page
+        page_num += 1
+
+# final_list = []
+# for item in reviews_list:
+#     split_list = item.split('minutes ago')
+#     list2 = split_list[-1]
+#     final_list.append(list2)
+
+# Create a DataFrame from the list of reviews
+df = pd.DataFrame({'Review':reviews_list})
+
+# Save the DataFrame to an Excel file
+df.to_excel('reviews.xlsx', index=False)
